@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Room</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/2.3.0/uicons-solid-rounded/css/uicons-solid-rounded.css'>
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/2.3.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@100..900&family=Major+Mono+Display&family=Montaga&display=swap" rel="stylesheet">
+
+
+    <link rel="stylesheet" href="../static/css/signal.css"rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/signal.css') }}">
+
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .container {
+            height: calc(100vh - 1rem); /* Subtract 1rem (16px) for padding */
+        }
+        ::-webkit-scrollbar {
+          width: 0; /* Remove scrollbar for Chrome, Safari, and Opera */
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js">
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@socket.io/client@4.0.1/dist/socket.io.min.js"></script>
+</head>
+<body class="bg-gray-100 p-4 flex" class="dark">
+    <div class="container max-w-lg bg-white rounded-lg shadow-lg p-4 mx-1">
+        <nav class="bg-gray-800 rounded-md">
+          <div class="mx-auto max-w-7xl px-2 sm:px-2 lg:px-2">
+            <div class="relative flex h-16 items-center justify-between">
+              <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
+                <!-- Mobile menu button-->
+                <button type="button" class="relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                  <span class="absolute -inset-0.5"></span>
+                  <span class="sr-only">Open main menu</span>
+                  <!-- Icon when menu is closed. -->
+                  <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                  </svg>
+                  <!-- Icon when menu is open. -->
+                  <svg class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
+                <div class="flex flex-shrink-0 items-center">
+                  <img class="h-7 w-auto" src="https://i.ibb.co/mHMBb3D/businessman.png" alt="BMV logo">
+                </div>
+                <div class="hidden sm:ml-2 sm:block">
+                  <div class="flex space-x-2">
+                    <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+                    <a href="#" class="text-gray-300 hover:text-white rounded-md px-3  pt-6 text-sm font-medium "><i class="fi fi-sr-apps"></i>
+                    <a href="#" class="text-gray-300  hover:text-white rounded-md px-3 pt-6 text-sm font-medium "><i class="fi fi-rr-waveform"></i>
+                    <a href="#" class="text-gray-300  hover:text-white rounded-md px-3 pt-6 text-sm font-medium "><i class="fi fi-rr-users-alt"></i>
+                    <a href="#" class="text-gray-300  hover:text-white rounded-md px-3 pt-6 text-sm font-medium "><i class="fi fi-sr-box-open"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+                <button type="button" class="relative rounded-full bg-gray-800 p-1 text-gray-400 mb-6 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
+                  <span class="absolute -inset-1.5"></span>
+                  <span class="sr-only">View notifications</span>
+                  <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                  </svg>
+                </button>
+                <!-- Profile dropdown -->
+                <div class="relative ml-1">
+                  <div>
+                    <button type="button" class="relative flex rounded-full bg-gray-800 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                      <span class="absolute -inset-1.5"></span>
+                      <span class="sr-only">Open user menu</span>
+                      <span class="material-symbols-outlined text-white">cell_tower</span>
+
+                    </button>
+                  </div>
+                  <div class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" id="user-menu" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
+                    <!-- Active: "bg-gray-100", Not Active: "" -->
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-0">Your Profile</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-1">Settings</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-2">Sign out</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Mobile menu, show/hide based on menu state. -->
+          <div class="sm:hidden" id="mobile-menu">
+            <div class="space-y-1 px-2 pb-3 pt-2">
+              <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+              <a href="#" class="bg-gray-900 text-white block rounded-md px-3 py-2 text-base font-medium">Dashboard</a>
+              <a href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 pt-2 text-base font-medium">Team</a>
+              <a href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 pt-2 text-base font-medium">Projects</a>
+              <a href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 pt-2 text-base font-medium">Calendar</a>
+            </div>
+          </div>
+        </nav>
+        <div class="bg-white p-4 rounded shadow mt-4 shadow-lg">
+             <!-- TradingView Widget BEGIN -->
+             <div class="tradingview-widget-container" style="height:100%;width:100%">
+                <div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div>
+                <div class="tradingview-widget-copyright">
+                    <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+                        <span class="blue-text">Track all markets on TradingView</span>
+                    </a>
+                </div>
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+                    {
+                    "autosize": true,
+                    "symbol": "OANDA:XAUUSD",
+                    "interval": "D",
+                    "timezone": "Etc/UTC",
+                    "theme": "dark",
+                    "style": "1",
+                    "locale": "en",
+                    "withdateranges": true,
+                    "hide_side_toolbar": false,
+                    "allow_symbol_change": true,
+                    "details": true,
+                    "calendar": false,
+                    "show_popup_button": true,
+                    "popup_width": "1000",
+                    "popup_height": "650",
+                    "support_host": "https://www.tradingview.com"
+                    }
+                    </script>
+            </div>
+        </div>
+        <div class="bg-gray-500 p-4 rounded shadow mt-4 shadow-lg ">
+            <div class='sk-instagram-feed' data-embed-id='25416579'></div>
+            <script src='https://widgets.sociablekit.com/instagram-feed/widget.js' async defer>
+            </script> 
+        </div>
+        </div>
+        </div>
+      </div>    
+      <!--------------Emitter container------>
+    <div class="max-w-lg mx-auto bg-white rounded-lg shadow-lg p-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">B</div>
+                <span class="text-xl text-white font-bold">BMV</span>
+            </div>
+            <span class="text-lg font-bold text-white">Signal Room</span>
+            <div class="flex items-center space-x-2">
+              <span id="status" class="text-white">●</span>
+                <span class="text-white">emit</span><i class="fi fi-sr-signal-alt-1"></i>
+                <div class="relative inline-block text-left">
+                  <button class="p-1 rounded-full mb-1">
+                    <img src="{{ url_for('static', filename='img/icons/envelope.png') }}" alt="Settings" class="w-5 h-5">
+                  </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 bg-gray-400 p-4 rounded-lg">
+          <div class="flex items-center justify-between">
+              <div class="relative inline-block text-left">
+                  <button id="dropdownButton" class="bg-purple-600 text-white font-bold px-4 py-2 rounded">Signal emitter  <span class="material-symbols-outlined text-white">cell_tower</span> </button> 
+                  <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <form action="{{ url_for('signal_details') }}" id="mt5_signal_login" method="post">
+                          <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                              <input type="text" id="loginInput" class="block px-4 py-2 text-sm text-gray-700" placeholder="Login" role="menuitem" name="Login">
+                              <input type="text" id="passwordInput" class="block px-4 py-2 text-sm text-gray-700" placeholder="Password" role="menuitem" name="Password">
+                              <input type="text" id="serverInput" class="block px-4 py-2 text-sm text-gray-700" placeholder="Server" role="menuitem" name="Server">
+                              <button id="enterButton" class="block w-full px-4 py-2 mt-2 bg-purple-600 text-white rounded" type="submit">Enter</button>
+                          </div>
+                      </form>
+                  </div>
+              </div>
+      
+              <div class="relative">
+                  <span id="counter" class="text-lg text-white">Emitter Timer: 00:00</span>
+                  <button id="settings_dropdown" class="bg-gray-400 p-1 rounded-full">
+                      <img src="{{ url_for('static', filename='img/icons/settings.png') }}" alt="Settings" class="w-5 h-5">
+                  </button>
+                  <div id="settings_dropdownMenu" class="hidden absolute ml-6 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="settings_dropdown">
+                          <button id="stop_emitter" name="stop_emitter" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-300" role="menuitem">Stop Emitter</button>
+                          <button class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-300" role="menuitem">Stop Message Broadcast1</button>
+                          <button class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-300" role="menuitem">Stop BOT Broadcast2</button>
+                          <button class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-300" role="menuitem">Button 4</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+      
+      <div class="mt-4">
+          <textarea class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter Admin Broadcast Message here"></textarea>
+          <button class="mt-2 bg-orange-500 text-white px-4 py-2 rounded">Broadcast</button>
+      </div>
+    <!-----Table-->
+<div class="border rounded" style="width: 100%; overflow: auto;">
+  <table class="w-full mt-4 bg-white border rounded-lg">
+    <thead class="bg-gray-400">
+      <tr>
+        <th class="p-2 border text-left">Date</th>
+        <th class="p-2 border text-left">Time</th>
+        <th class="p-2 border text-left">Action</th>
+        <th class="p-2 border text-left">Symbol</th>
+        <th class="p-2 border text-left">Entry Price</th>
+        <th class="p-2 border text-left">T.p 1</th>
+        <th class="p-2 border text-left">T.p 2</th>
+        <th class="p-2 border text-left">T.p 3</th>
+        <th class="p-2 border text-left">T.p 4</th>
+        <th class="p-2 border text-left">Stop loss</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for position in positions %}
+      <tr>
+        <td class="p-2 border">{{ position.date }}</td>
+        <td class="p-2 border">{{ position.time }}</td>
+        <td class="p-2 border">{{ position.action }}</td>
+        <td class="p-2 border">{{ position.symbol }}</td>
+        <td class="p-2 border">{{ position.entry_price }}</td>
+        <td class="p-2 border">{{ position.tp1 }}</td>
+        <td class="p-2 border">{{ position.tp2 }}</td>
+        <td class="p-2 border">{{ position.tp3 }}</td>
+        <td class="p-2 border">{{ position.tp4 }}</td>
+        <td class="p-2 border">{{ position.sl }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+  <!--------------------Broadcast section------>
+      <div class="flex mt-4 space-x-4">
+          <button onclick="sendMessage()" class="bg-green-500 text-white px-4 py-2 rounded flex items-center space-x-2" id="whatsappmsg">
+              <img src="{{ url_for('static', filename='img/icons/perspective_matte whatsapp.png') }}" alt="WhatsApp" class="w-5 h-5">
+              <span>Whatsapp Broadcast</span>
+          </button>
+          <button class="bg-blue-500 text-white px-4 py-2 rounded flex items-center space-x-2">
+              <img src="{{ url_for('static', filename='img/icons/satellite white.png') }}" alt="Satellite" class="w-5 h-5">
+          </button>
+          <button class="bg-orange-500 text-white px-2 py-2 rounded">59:00 sec</button>
+      </div>
+      
+      <div class="grid grid-cols-3 gap-4 mt-4">
+        <div class="h-20 bg-blue-950 rounded-lg">
+              {% with messages = get_flashed_messages(category_filter=["signal_searching"]) %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-info">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+      </div>
+          <div class="h-20 bg-blue-950 rounded-lg">
+              <!-- Flash message placeholder -->
+              {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                      {% for category, message in messages %}
+                          <div class="alert alert-{{ category }}" role="alert">
+                              {{ message }}
+                          </div>
+                      {% endfor %}
+                  {% endif %}
+              {% endwith %}
+              <!-----------End of Flash-->
+          </div>
+          <div class="h-20 bg-blue-950 rounded-lg ">
+          </div>
+          <div class="flex flex-col bg-white w-full rounded shadow-lg p-2 mt-4">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex space-x-2">
+                  <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                  <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                  <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+              </div>
+              </div>
+              <div type="text-area" class="content p-2 border rounded" id="message_template">
+                  <h3 class="text-lg font-semibold mb-2">BMV for WhatsApp</h3>
+                  {% for position in positions %}
+                  <div>
+                      <p>Date: {{ position.date }}</p><span>Time: {{ position.time }}</span>
+                      <p>Action: {{ position.action }}</p>
+                      <p>Take Profit 1: {{ position.tp1 }}</p><span>Take Profit 2: {{ position.tp2 }}</span>
+                      <p>Take Profit 3: {{ position.tp3 }}</p><span>Take Profit 4: {{ position.tp4 }}</span>
+                      <p>STOP LOSS: {{ position.sl }}</p>
+                  </div>
+                  {% endfor %}
+              </div>
+          </div>
+          <!-----Power Button for signal-->
+          <div class="grid grid-row-1">
+            <input id="powerCheckbox" type="checkbox" />
+            <label class="powerbutton" for="powerCheckbox">
+              <span class="icon">
+                <svg
+                  height="2px"
+                  width="2px"
+                  version="1.1"
+                  id="Capa_1"
+                  xmlns="http://www.w3.org/2000/svg"
+                  xmlns:xlink="http://www.w3.org/1999/xlink"
+                  viewBox="0 0 30.143 30.143"
+                  xml:space="preserve"
+                  fill=""
+                  style="--darkreader-inline-fill: #000000;"
+                  data-darkreader-inline-fill=""
+                >
+                  <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                  <g
+                    id="SVGRepo_tracerCarrier"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></g>
+                  <g id="SVGRepo_iconCarrier">
+                    <g>
+                      <path
+                        d="M20.034,2.357v3.824c3.482,1.798,5.869,5.427,5.869,9.619c0,5.98-4.848,10.83-10.828,10.83 c-5.982,0-10.832-4.85-10.832-10.83c0-3.844,2.012-7.215,5.029-9.136V2.689C4.245,4.918,0.731,9.945,0.731,15.801 c0,7.921,6.42,14.342,14.34,14.342c7.924,0,14.342-6.421,14.342-14.342C29.412,9.624,25.501,4.379,20.034,2.357z"
+                        data-darkreader-inline-fill=""
+                      ></path>
+                      <path
+                        d="M14.795,17.652c1.576,0,1.736-0.931,1.736-2.076V2.08c0-1.148-0.16-2.08-1.736-2.08 c-1.57,0-1.732,0.932-1.732,2.08v13.496C13.062,16.722,13.225,17.652,14.795,17.652z"
+                        data-darkreader-inline-fill=""
+                      ></path>
+                    </g>
+                  </g>
+                </svg>
+              </span>
+            </label>
+          </div>
+        <!-----End of Power Buttons-->
+          
+          <!-----buttons to start CPU metrics-->
+          <div class="grid grid-row-2">
+            <input type="checkbox" id="checkbox" />
+            <label for="checkbox" class="button">
+              <span class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="" viewBox="0 0 24 24">
+                  <g stroke-width="0" id="SVGRepo_bgCarrier"></g>
+                  <g
+                    stroke-linejoin="round"
+                    stroke-linecap="round"
+                    id="SVGRepo_tracerCarrier"
+                  ></g>
+                  <g id="SVGRepo_iconCarrier">
+                    <path
+                      fill=""
+                      d="M17.35 12.7901C17.1686 12.7907 16.9935 12.7229 16.86 12.6001C15.5322 11.411 13.8124 10.7534 12.03 10.7534C10.2476 10.7534 8.52779 11.411 7.19999 12.6001C7.12649 12.6658 7.04075 12.7164 6.94767 12.749C6.85459 12.7816 6.756 12.7955 6.65755 12.7899C6.55909 12.7843 6.4627 12.7594 6.37389 12.7165C6.28508 12.6736 6.2056 12.6137 6.13999 12.5401C6.0109 12.3892 5.94595 12.1939 5.95904 11.9958C5.97212 11.7977 6.06219 11.6126 6.20999 11.4801C7.80752 10.0423 9.88072 9.2467 12.03 9.2467C14.1793 9.2467 16.2525 10.0423 17.85 11.4801C17.9978 11.6126 18.0879 11.7977 18.1009 11.9958C18.114 12.1939 18.0491 12.3892 17.92 12.5401C17.8469 12.6181 17.7586 12.6806 17.6606 12.7236C17.5627 12.7665 17.457 12.7892 17.35 12.7901Z"
+                    ></path>
+                    <path
+                      fill=""
+                      d="M20 10C19.811 9.99907 19.6292 9.92777 19.49 9.80002C17.4685 7.87306 14.7828 6.79812 11.99 6.79812C9.19719 6.79812 6.51153 7.87306 4.48999 9.80002C4.42116 9.88186 4.33563 9.94804 4.23912 9.99411C4.14262 10.0402 4.03738 10.0651 3.93046 10.0672C3.82354 10.0692 3.71742 10.0484 3.61921 10.0061C3.521 9.96375 3.43298 9.90092 3.36105 9.82179C3.28911 9.74267 3.23493 9.64907 3.20214 9.54729C3.16934 9.4455 3.15869 9.33788 3.17091 9.23164C3.18312 9.1254 3.21791 9.023 3.27294 8.93131C3.32798 8.83962 3.40198 8.76076 3.48999 8.70002C5.78577 6.52533 8.82774 5.31329 11.99 5.31329C15.1522 5.31329 18.1942 6.52533 20.49 8.70002C20.5994 8.80134 20.6761 8.93298 20.7103 9.07811C20.7446 9.22324 20.7348 9.37527 20.6822 9.5148C20.6296 9.65433 20.5366 9.77502 20.4151 9.86145C20.2936 9.94787 20.1491 9.99612 20 10Z"
+                    ></path>
+                    <path
+                      fill=""
+                      d="M9.38 15.64C9.26356 15.64 9.14873 15.6129 9.04459 15.5608C8.94044 15.5088 8.84986 15.4332 8.78 15.34C8.7196 15.2617 8.67551 15.1721 8.65032 15.0765C8.62513 14.9809 8.61936 14.8812 8.63334 14.7834C8.64732 14.6855 8.68078 14.5914 8.73173 14.5067C8.78268 14.4219 8.8501 14.3483 8.93 14.29C9.81277 13.6145 10.8934 13.2485 12.005 13.2485C13.1166 13.2485 14.1972 13.6145 15.08 14.29C15.1588 14.3491 15.2252 14.4232 15.2754 14.5079C15.3255 14.5926 15.3585 14.6865 15.3725 14.784C15.3864 14.8815 15.381 14.9807 15.3565 15.0762C15.3321 15.1716 15.2891 15.2612 15.23 15.34C15.1091 15.497 14.9316 15.6005 14.7355 15.6285C14.5394 15.6565 14.34 15.6068 14.18 15.49C13.5548 15.014 12.7908 14.7561 12.005 14.7561C11.2192 14.7561 10.4551 15.014 9.83 15.49C9.69921 15.5855 9.54193 15.6379 9.38 15.64Z"
+                    ></path>
+                    <path
+                      fill=""
+                      d="M12 18.75C11.8011 18.75 11.6103 18.671 11.4697 18.5303C11.329 18.3897 11.25 18.1989 11.25 18C11.25 17.8011 11.329 17.6103 11.4697 17.4697C11.6103 17.329 11.8011 17.25 12 17.25C12.1989 17.25 12.3897 17.329 12.5303 17.4697C12.671 17.6103 12.75 17.8011 12.75 18C12.75 18.1989 12.671 18.3897 12.5303 18.5303C12.3897 18.671 12.1989 18.75 12 18.75Z"
+                    ></path>
+                  </g>
+                </svg>
+              </span>
+            </label>
+          </div>
+        <!-----end of metrics button-->
+      </div>
+    </div>
+    <div class="container max-w-lg h-screen bg-white rounded-lg shadow-lg p-4 ml-2">
+      <nav class="bg-gray-800 rounded-md">
+        <div class="mx-auto max-w-7xl px-2 sm:px-2 lg:px-2">
+          <div class="relative flex h-16 items-center justify-between">
+            <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
+              <!-- Mobile menu button-->
+              <button type="button" class="relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                <span class="absolute -inset-0.5"></span>
+                <span class="sr-only">Open main menu</span>
+                <!-- Icon when menu is closed. -->
+                <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+                <!-- Icon when menu is open. -->
+                <svg class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
+              <div class="flex flex-shrink-0 items-center">
+                <img class="h-7 w-auto" src="https://i.ibb.co/mHMBb3D/businessman.png" alt="BMV logo">
+              </div>
+              <div class="hidden sm:ml-2 sm:block">
+                <div class="flex space-x-2">
+                  <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+                  <a href="../ServerRoom/serverRoom.html" class="text-gray-300 hover:text-white rounded-md px-3 pt-2 text-sm font-medium "><i class="fi fi-sr-apps"></i></a>
+                  <a href="#" class="text-gray-300 hover:text-white rounded-md px-3 pt-2 text-sm font-medium "><i class="fi fi-rr-waveform "></i></a>
+                  <a href="#" class="text-gray-300 hover:text-white rounded-md px-3 pt-2 text-sm font-medium "><i class="fi fi-rr-users-alt"></i></a>
+                  <a href="#" class="text-gray-300 hover:text-white rounded-md px-3 pt-2 text-sm font-medium "><i class="fi fi-sr-box-open"></i></a>
+                  <div class="text-gray-300 hover:text-white rounded-md px-3 pt-2 text-sm font-medium ml-3 " id="darkmodeToggle"><i class="fi fi-sr-moon-stars"></i></div>
+
+                </div>
+              </div>
+            </div>
+            <div class="absolute inset-y-0 right-2 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+             
+              <!-- Profile dropdown -->
+              <div class="relative ml-1">
+                <div>
+                  <button type="button" class="relative flex rounded-full bg-gray-800 text-sm mb-0 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                    <span class="absolute -inset-1.5"></span>
+                    <span class="sr-only">Open user menu</span>
+                    <img class="h-6 w-6 rounded-full" src="{{ url_for('static', filename='img/icons/user (1).png') }}" alt="">
+                  </button>
+                </div>
+                <div class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" id="user-menu" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
+                  <!-- Active: "bg-gray-100", Not Active: "" -->
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-0">Your Profile</a>
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-1">Settings</a>
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-2">Sign out</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div class="flex flex-col bg-white rounded shadow-lg p-4 mt-3">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex space-x-2">
+                <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+            </div>
+        </div>
+        <div class="flex-col bg-white border rounded ">
+            <h3 class="text-white text-lg font-semibold mb-2">CPU Analytics</h3>
+            <img id="cpuChart" class="mb-2 border rounded-lg" />
+            <div id="downloadSpeedGauge" class="gauge-container mb-2 shadow-lg">
+            <div id="uploadSpeedGauge" class="gauge-container mb-2 shadow-lg">
+            <div class="mb-2 shadow-lg"></div>
+        </div>
+      </div>
+        <div class="flex flex-col bg-white rounded shadow-lg p-4 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex space-x-2">
+                    <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                    <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                    <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                </div>
+                <div class="flex-grow px-4">
+                    <input type="text" class="w-full p-2 border rounded">
+                </div>
+            </div>
+            <div class="content">
+                <h3 class="text-lg font-semibold mb-2">Network Analytics</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+      // Polyfill for replaceChildren
+if (!Element.prototype.replaceChildren) {
+  Element.prototype.replaceChildren = function(...newChildren) {
+      while (this.firstChild) {
+          this.removeChild(this.firstChild);
+      }
+      this.append(...newChildren);
+  };
+}
+
+// Function to safely get elements
+function safeGetElement(id) {
+  const element = document.getElementById(id);
+  if (!element) {
+      console.warn(`Element with id '${id}' not found`);
+  }
+  return element;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Dropdown menu
+  const dropdownButton = safeGetElement('dropdownButton');
+  const dropdownMenu = safeGetElement('dropdownMenu');
+  if (dropdownButton && dropdownMenu) {
+      dropdownButton.addEventListener('click', function () {
+          dropdownMenu.classList.toggle('hidden');
+          dropdownMenu.classList.toggle('block');
+      });
+  }
+
+  // Profile dropdown menu
+  const userMenuButton = safeGetElement('user-menu-button');
+  const userMenu = safeGetElement('user-menu');
+  if (userMenuButton && userMenu) {
+      userMenuButton.addEventListener('click', function (event) {
+          event.stopPropagation();
+          userMenu.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', function (event) {
+          if (!userMenuButton.contains(event.target) && !userMenu.contains(event.target)) {
+              userMenu.classList.add('hidden');
+          }
+      });
+  }
+
+  // Settings dropdown
+  const settingsDropdown = safeGetElement('settings_dropdown');
+  const settingsDropdownMenu = safeGetElement('settings_dropdownMenu');
+  if (settingsDropdown && settingsDropdownMenu) {
+      settingsDropdown.addEventListener('click', function (event) {
+          event.stopPropagation();
+          settingsDropdownMenu.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', function (event) {
+          if (!settingsDropdown.contains(event.target) && !settingsDropdownMenu.contains(event.target)) {
+              settingsDropdownMenu.classList.add('hidden');
+          }
+      });
+  }
+
+  // MT5 shutdown
+  const stopEmitter = safeGetElement('stop_emitter');
+  if (stopEmitter) {
+      stopEmitter.addEventListener('click', function () {
+          fetch('/shutdown_mt5', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              }
+          }).then(response => {
+              if (response.ok) {
+                  console.log('MT5 is shutting down');
+                  alert('MT5 is shutting down');
+              } else {
+                  console.log('Failed to shut down MT5');
+                  alert('Failed to shut down MT5');
+              }
+          }).catch(error => {
+              console.error('Error:', error);
+          });
+      });
+  }
+
+  // Counter logic
+  let interval;
+  let seconds = 0;
+  let isThreadRunning = false;
+
+  function startCounter() {
+      interval = setInterval(updateCounter, 1000);
+      updateUI('counter', 'green', 'Status: Running');
+      updateUI('status', 'green', 'Status: Running');
+  }
+
+  function stopCounter() {
+      clearInterval(interval);
+      seconds = 0;
+      updateCounter();
+      updateUI('counter', 'white', 'Status: Stopped');
+      updateUI('status', 'gray', 'Status: Stopped');
+  }
+
+  function updateCounter() {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      const formattedTime = `${padZero(minutes)}:${padZero(remainingSeconds)}`;
+      const counterElement = safeGetElement('counter');
+      if (counterElement) {
+          counterElement.textContent = `Emitter Timer: ${formattedTime}`;
+      }
+      seconds++;
+  }
+
+  function padZero(value) {
+      return value.toString().padStart(2, '0');
+  }
+
+  function updateUI(elementId, color, text) {
+      const element = safeGetElement(elementId);
+      if (element) {
+          element.style.color = color;
+          element.textContent = text;
+      }
+  }
+
+  async function checkThreadStatus() {
+      try {
+          const response = await fetch('/thread_status');
+          const data = await response.json();
+          isThreadRunning = data.is_running;
+          if (isThreadRunning) {
+              startCounter();
+          } else {
+              stopCounter();
+          }
+      } catch (error) {
+          console.error('Error checking thread status:', error);
+      }
+  }
+
+  // Call checkThreadStatus on page load to start the counter if the thread is running
+  checkThreadStatus();
+
+  // Button animation
+  const whatsappButton = safeGetElement('whatsappmsg');
+  if (whatsappButton) {
+      whatsappButton.addEventListener('click', function () {
+          whatsappButton.classList.add('pressed');
+          setTimeout(function () {
+              whatsappButton.classList.remove('pressed');
+          }, 1000);
+      });
+  }
+
+  // Socket.io logic
+  const socket = io();
+
+  socket.on('connect', () => {
+      console.log('Connected to server');
+  });
+
+  socket.on('new_signal', (positions) => {
+      const messageTemplate = safeGetElement('message_template');
+      if (messageTemplate) {
+          messageTemplate.innerHTML = `
+              <h3 class="text-lg font-semibold mb-2">BMV for WhatsApp</h3>
+              <p class="text-lg blue-500 font-semibold">With Love from Big Move Software.</p>
+          `;
+          positions.forEach(pos => {
+              const positionElement = document.createElement('div');
+              positionElement.innerHTML = `
+                  <p>Date: ${pos.date}</p><span>Time: ${pos.time}</span>
+                  <p>Action: ${pos.action}</p>
+                  <p>Entry Price: ${pos.entry_price}</p>
+                  <p>Take Profit 1: ${pos.tp1}</p><span>Take Profit 2: ${pos.tp2}</span>
+                  <p>Take Profit 3: ${pos.tp3}</p><span>Take Profit 4: ${pos.tp4}</span>
+                  <p>STOP LOSS: ${pos.sl}</p>
+              `;
+              messageTemplate.appendChild(positionElement);
+          });
+      }
+  });
+
+  socket.on('update_metrics', data => {
+      console.log('Received update_metrics:', data);
+
+      const cpuChart = safeGetElement('cpuChart');
+      if (cpuChart) {
+          cpuChart.src = 'data:image/png;base64,' + data.cpu_violin_plot;
+      }
+
+      const downloadSpeedGauge = safeGetElement('downloadSpeedGauge');
+      if (downloadSpeedGauge) {
+          downloadSpeedGauge.innerHTML = '<img src="data:image/png;base64,' + data.download_speed_gauge + '">';
+      }
+
+      const uploadSpeedGauge = safeGetElement('uploadSpeedGauge');
+      if (uploadSpeedGauge) {
+          uploadSpeedGauge.innerHTML = '<img src="data:image/png;base64,' + data.upload_speed_gauge + '">';
+      }
+  });
+
+  socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+  });
+
+  // Toggle for metrics (wifi) button
+  const metricsCheckbox = safeGetElement('checkbox');
+  if (metricsCheckbox) {
+      metricsCheckbox.addEventListener('change', function() {
+          const isChecked = this.checked;
+          fetch('/toggle_metrics', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ start: isChecked })
+          })
+          .then(response => response.json())
+          .then(data => {
+              console.log('Success:', data);
+          })
+          .catch((error) => {
+              console.error('Error:', error);
+          });
+      });
+  }
+
+  // Toggle for power button
+  const powerCheckbox = safeGetElement('powerCheckbox');
+  if (powerCheckbox) {
+      powerCheckbox.addEventListener('change', function() {
+          const isChecked = this.checked;
+          fetch('/toggle_fetch_signals', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ start: isChecked })
+          })
+          .then(response => response.json())
+          .then(data => {
+              console.log('Success:', data.message);
+              alert(data.message);  
+          })
+          .catch((error) => {
+              console.error('Error:', error);
+              alert('Error occurred while toggling signal fetching.');
+          });
+      });
+  }
+});
+    </script>
+</body>
+</html>
