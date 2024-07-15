@@ -1,6 +1,3 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
 name: Python application
 
 on:
@@ -19,6 +16,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install MetaTrader5
+      run: |
+        $url = "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
+        Invoke-WebRequest -Uri $url -OutFile "mt5setup.exe"
+        Start-Process -FilePath "mt5setup.exe" -ArgumentList "/silent" -NoNewWindow -Wait
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
@@ -37,4 +39,3 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
-
