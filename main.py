@@ -2,19 +2,27 @@ import os
 import time
 import logging
 from datetime import datetime
-from flask import Flask,flash, render_template, request, jsonify
+from flask import Flask, flash, render_template, request, jsonify
 from flask_socketio import SocketIO
 import threading
+from engineio.async_drivers import gevent
 import psutil
 import MetaTrader5 as mt5
 from telmsg import send_message
 from metricschart import get_cpu_metrics, get_network_speed, create_violin_plot, create_gauge_chart
 from copy import deepcopy
+from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtCore import QUrl
+import jinja2.ext
+from threading import Thread
+import sys
+
 
 # Initialize Flask and SocketIO
-app = Flask(__name__, template_folder='template')
+app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'mynameisprincejerrymypasswordisBeautysoap01#')
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='gevent', async_handler='threading')
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -45,7 +53,6 @@ if not mt5.initialize():
 def loader():
     return render_template('loader.html')
 
-
 @app.route('/signal')
 def signal():
     return render_template('sig2.html', positions=positions)
@@ -61,8 +68,7 @@ def signal_details():
         logger.info("Successfully logged in to MetaTrader 5")
         socketio.emit('message', {'message': "Successfully logged in to MetaTrader 5", 'category': 'info'})
         flash("logged in successfully")
-        print( "signal details provided",signal_details_provided)
-    #fetch_signals()
+        print("signal details provided", signal_details_provided)
     return render_template('sig2.html')
 
 @app.route('/thread_status')
@@ -125,17 +131,14 @@ def toggle_metrics():
     toggle_metrics_thread(start)
     return jsonify({"status": "success", "metrics_thread_running": metrics_thread_running})
 
-# SocketIO event handlers
 @socketio.on('connect')
 def handle_connect():
     toggle_metrics_thread(True)
 
-# Function to start fetching signals
 def fetch_signals():
     if signal_details_provided:
         toggle_fetch_signals_thread(True)
 
-# Thread management functions
 def toggle_fetch_signals_thread(start):
     global signal_thread_running
     with lock:
@@ -239,5 +242,64 @@ def conError():
 def timeout():
     return render_template('timeout.html')
 
-if __name__ == '__main__':
+def run_flask_app():
     socketio.run(app)
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Emitter GUI")
+        self.setGeometry(100, 100, 1024, 768)
+        
+        self.web_view = QWebEngineView()
+        self.setCentralWidget(self.web_view)
+        
+        # Use QUrl.fromLocalFile for local files
+        self.web_view.load(QUrl("http://127.0.0.1:5000"))
+
+def main():
+    # Run Flask app in a separate thread
+    flask_thread = Thread(target=run_flask_app)
+    flask_thread.daemon = True
+    flask_thread.start()
+
+    # Create and display the PyQt5 window
+    qt_app = QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.show()
+    sys.exit(qt_app.exec_())
+
+if __name__ == '__main__':
+    main()
+    if os.environ.get('PRODUCTION'):
+        # In production, use Gunicorn with Gevent
+        import gunicorn.app.base
+
+        class StandaloneApplication(gunicorn.app.base.BaseApplication):
+            def __init__(self, app, options=None):
+                self.options = options or {}
+                self.application = app
+                super().__init__()
+
+            def load_config(self):
+                config = {key: value for key, value in self.options.items()
+                          if key in self.cfg.settings and value is not None}
+                for key, value in config.items():
+                    self.cfg.set(key.lower(), value)
+
+            def load(self):
+                return self.application
+
+        app = Flask(__name__)
+        socketio = SocketIO(app)
+        options = {
+            'worker_class': 'gevent',
+            'workers': 1,
+            'bind': '0.0.0.0:5000'
+        }
+        StandaloneApplication(app, options).run()
+    else:
+        # In development, use the Flask development server
+        app = Flask(__name__)
+        socketio = SocketIO(app)
+        socketio.run(app, debug=True)
